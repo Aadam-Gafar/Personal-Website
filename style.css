@@ -33,9 +33,9 @@ body::before {
 a:hover  { color:var(--ac) }
 
 /* ── header ── */
-header { padding:5rem 0 4rem; animation:fadeUp .6s ease both }
+header { padding:2rem 0; animation:fadeUp .6s ease both }
 
-.prompt { color:var(--ac); font-size:12px; letter-spacing:.08em; margin-bottom:1.2rem; opacity:.8 }
+.prompt { color:var(--ac); font-size:12px; letter-spacing:.08em; margin-bottom:1rem; opacity:.8 }
 .prompt::before { content:'> ' }
 
 h1 { font-size:clamp(2rem,5vw,3.2rem); font-weight:500; color:var(--bright); letter-spacing:-.02em; line-height:1.1; margin-bottom:1rem }
@@ -48,9 +48,9 @@ h1 { font-size:clamp(2rem,5vw,3.2rem); font-weight:500; color:var(--bright); let
 .header-links a { font-size:11px; color:var(--muted); text-decoration:none; border:1px solid var(--bd); padding:3px 8px; border-radius:2px; white-space:nowrap; transition:border-color .2s,color .2s }
 
 /* ── sections ── */
-section { padding:4rem 0; border-top:1px solid var(--bd); animation:fadeUp .6s ease both; animation-delay:.15s }
+section { padding:2rem 0; border-top:1px solid var(--bd); animation:fadeUp .6s ease both; animation-delay:.15s }
 
-.section-label         { font-size:11px; letter-spacing:.12em; color:var(--ac); text-transform:uppercase; margin-bottom:2.5rem }
+.section-label         { font-size:11px; letter-spacing:.12em; color:var(--ac); text-transform:uppercase; margin-bottom:1rem }
 .section-label::before { content:'// '; opacity:.5 }
 
 /* ── projects ── */
