@@ -9,7 +9,7 @@ const REPOS = [
         repo: 'Aadam-Gafar/Mono-YouTube-Extension',
         links: [
             { label: 'chrome store ↗', url: 'https://chromewebstore.google.com/detail/focus-for-youtube/nppiofogichmlkadpbpkpojpidedifeh' },
-            { label: 'firefox add-on ↗', url: 'https://addons.mozilla.org/en-US/firefox/addon/focus-youtube-simplified/' },
+            { label: 'firefox add-on ↗', url: 'https://addons.mozilla.org/en-US/firefox/addon/mono-extension/' },
         ],
     },
 ];
