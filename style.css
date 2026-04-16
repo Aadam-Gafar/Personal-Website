@@ -28,6 +28,36 @@ body {
   transition: background .3s, color .3s;
 }
 
+#matrix-portrait {
+  --ascii-cell: clamp(5px, .72vw, 8px);
+  --ascii-row: calc(var(--ascii-cell) * 1.05);
+  position:fixed;
+  left:58%;
+  top:54%;
+  z-index:0;
+  width:100ch;
+  margin:0;
+  pointer-events:none;
+  user-select:none;
+  color:var(--ac);
+  font-family:var(--mono);
+  font-size:var(--ascii-cell);
+  line-height:var(--ascii-row);
+  letter-spacing:0;
+  white-space:pre;
+  opacity:.16;
+  text-shadow:0 0 7px rgba(0,255,102,.8), 0 0 18px rgba(0,255,102,.35);
+  transform:translate(-58%,-54%);
+  transform-origin:58% 54%;
+  transition:opacity .3s;
+}
+
+body.light #matrix-portrait {
+  color:#fff;
+  opacity:.32;
+  text-shadow:0 0 2px rgba(31,143,0,.9), 0 0 8px rgba(31,143,0,.65), 0 0 18px rgba(31,143,0,.35);
+}
+
 /* scanlines */
 body::before {
   content:''; position:fixed; inset:0; pointer-events:none; z-index:100;
@@ -35,7 +65,7 @@ body::before {
 }
 
 /* ── shared ── */
-.wrap    { max-width:860px; margin:0 auto; padding:0 2rem }
+.wrap    { max-width:860px; margin:0 auto; padding:0 2rem; position:relative; z-index:1 }
 .prose   { font-family:var(--sans); font-weight:300; font-size:13px; color:var(--text); line-height:1.65 }
 .panel   { background:var(--bg2); border:1px solid var(--bd); border-radius:4px; padding:1.25rem 1.5rem }
 a               { color: var(--text); text-decoration: none; }

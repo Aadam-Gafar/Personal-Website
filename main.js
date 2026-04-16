@@ -27,6 +27,11 @@ const ICONS = {
     fork: `<svg viewBox="0 0 16 16"><path d="M5 5.372v.878c0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75v-.878a2.25 2.25 0 1 1 1.5 0v.878a2.25 2.25 0 0 1-2.25 2.25h-1.5v2.128a2.251 2.251 0 1 1-1.5 0V8.5h-1.5A2.25 2.25 0 0 1 3.5 6.25v-.878a2.25 2.25 0 1 1 1.5 0zM5 3.25a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0zm6.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5zm-3 8.75a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0z"/></svg>`,
 };
 
+const MATRIX_GLITCH_SYMBOLS = '@#%&$WM8B';
+const MATRIX_GLITCH_COUNT = 10;
+const MATRIX_GLITCH_LENGTH = 500;
+const MATRIX_GLITCH_INTERVAL = 100;
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 const fmt = n => n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
@@ -37,6 +42,57 @@ async function fetchRepo(path) {
         const r = await fetch(`https://api.github.com/repos/${path}`);
         return r.ok ? r.json() : null;
     } catch { return null; }
+}
+
+async function initMatrixPortrait() {
+    const portrait = document.getElementById('matrix-portrait');
+    if (!portrait) return;
+
+    try {
+        const r = await fetch('face.txt', { cache: 'force-cache' });
+        if (!r.ok) return;
+        const art = (await r.text()).replace(/\r\n?/g, '\n');
+        portrait.textContent = art;
+        initMatrixGlitch(portrait, art);
+    } catch {
+        portrait.remove();
+    }
+}
+
+function initMatrixGlitch(portrait, art) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const source = [...art];
+    const glitchable = [];
+
+    source.forEach((char, index) => {
+        if (/\S/.test(char)) glitchable.push(index);
+    });
+
+    if (!glitchable.length) return;
+
+    const glitch = () => {
+        const frame = [...source];
+        const picked = new Set();
+        const count = Math.min(MATRIX_GLITCH_COUNT, glitchable.length);
+
+        while (picked.size < count) {
+            picked.add(glitchable[Math.floor(Math.random() * glitchable.length)]);
+        }
+
+        picked.forEach(index => {
+            frame[index] = MATRIX_GLITCH_SYMBOLS[Math.floor(Math.random() * MATRIX_GLITCH_SYMBOLS.length)];
+        });
+
+        portrait.textContent = frame.join('');
+
+        window.setTimeout(() => {
+            portrait.textContent = art;
+            window.setTimeout(glitch, MATRIX_GLITCH_INTERVAL);
+        }, MATRIX_GLITCH_LENGTH);
+    };
+
+    glitch();
 }
 
 // ── projects ──────────────────────────────────────────────────────────────────
@@ -101,6 +157,7 @@ function initTheme() {
 
 // ── init ──────────────────────────────────────────────────────────────────────
 
+initMatrixPortrait();
 initProjects();
 initContact();
 initTheme();
