@@ -12,6 +12,7 @@ const REPOS = [
             { label: 'firefox add-on ↗', url: 'https://addons.mozilla.org/en-US/firefox/addon/mono-extension/' },
         ],
     },
+    { repo: 'Aadam-Gafar/Mono-Video-Browser'},
 ];
 
 // ── constants ─────────────────────────────────────────────────────────────────
@@ -45,7 +46,7 @@ function buildCard(p, d) {
     const dot = lang && LANG_COLORS[lang] ? `<span class="lang-dot" style="background:${LANG_COLORS[lang]}"></span>` : '';
     const allLinks = [...(p.links || []), { label: 'github ↗', url: d?.html_url }];
 
-    return `<div class="card">
+    return `<div class="carousel-slide"><div class="card">
     <div class="card-header">
       ${link('card-title', d?.html_url, d?.name || p.repo.split('/')[1])}
       <div class="card-links">${allLinks.map(l => link('card-link', l.url, l.label)).join('')}</div>
@@ -56,14 +57,59 @@ function buildCard(p, d) {
       <span class="meta-item">${ICONS.fork} ${d ? fmt(d.forks_count) : '—'}</span>
       ${lang ? `<span class="meta-item">${dot} ${lang}</span>` : ''}
     </div>
-  </div>`;
+  </div></div>`;
 }
 
 async function initProjects() {
-    const grid = document.getElementById('project-grid');
-    grid.innerHTML = REPOS.map(() => `<div class="card"><p class="loading">fetching...</p></div>`).join('');
+    const track = document.getElementById('project-grid');
+    track.innerHTML = REPOS.map(() =>
+        `<div class="carousel-slide"><div class="card"><p class="loading">fetching...</p></div></div>`
+    ).join('');
     const data = await Promise.all(REPOS.map(p => fetchRepo(p.repo)));
-    grid.innerHTML = REPOS.map((p, i) => buildCard(p, data[i])).join('');
+    track.innerHTML = REPOS.map((p, i) => buildCard(p, data[i])).join('');
+    initCarousel(track);
+}
+
+function initCarousel(track) {
+    const total = REPOS.length;
+    let cur = 0;
+
+    const dotsEl = document.getElementById('carousel-dots');
+    const prevBtn = document.getElementById('carousel-prev');
+    const nextBtn = document.getElementById('carousel-next');
+
+    dotsEl.innerHTML = Array.from({ length: total }, (_, i) =>
+        `<button class="carousel-dot" aria-label="Go to project ${i + 1}"></button>`
+    ).join('');
+    const dots = [...dotsEl.querySelectorAll('.carousel-dot')];
+
+    function go(idx) {
+        cur = Math.max(0, Math.min(total - 1, idx));
+        track.style.transform = `translateX(-${cur * 100}%)`;
+        dots.forEach((d, i) => d.classList.toggle('active', i === cur));
+        prevBtn.disabled = cur === 0;
+        nextBtn.disabled = cur === total - 1;
+    }
+
+    prevBtn.addEventListener('click', () => go(cur - 1));
+    nextBtn.addEventListener('click', () => go(cur + 1));
+    dots.forEach((d, i) => d.addEventListener('click', () => go(i)));
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'ArrowLeft') go(cur - 1);
+        if (e.key === 'ArrowRight') go(cur + 1);
+    });
+
+    let touchStartX = null;
+    track.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    track.addEventListener('touchend', e => {
+        if (touchStartX === null) return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) > 40) go(cur + (dx < 0 ? 1 : -1));
+        touchStartX = null;
+    }, { passive: true });
+
+    go(0);
 }
 
 // ── contact form ──────────────────────────────────────────────────────────────
