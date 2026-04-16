@@ -223,6 +223,8 @@ body.light #theme-toggle img {
 }
 
 @media (max-width:600px) {
+  .prompt { flex-direction:column; align-items:flex-start; gap:.75rem }
+  .prompt span { display:block }
   .header-bottom { flex-direction:column }
   .header-links { align-items:flex-start }
   h1 { font-size:1.8rem }
