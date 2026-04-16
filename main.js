@@ -4,15 +4,34 @@
 // links[] is for anything GitHub doesn't know (store URLs, live demos, etc.)
 
 const REPOS = [
-    { repo: 'Aadam-Gafar/Equity-Returns-Forecasting' },
+    {
+        repo: 'Aadam-Gafar/Weight-Forecasting-Pipeline',
+        name: 'Weight Forecasting Pipeline',
+        description: 'Weight forecasting pipeline for athletes using daily nutrition data. Predicts weight trajectory from MacroFactor exports to support controlled weight cuts for combat sports.',
+        stars: '-',
+        forks: '-',
+        language: 'Jupyter Notebook',
+    },
     {
         repo: 'Aadam-Gafar/Mono-YouTube-Extension',
+        name: 'Mono YouTube Extension',
+        description: `A browser extension that removes YouTube's recommendations, dark patterns, and distracting UI elements. Published on Chrome and Firefox with 1000+ users. Mascot: Mono, a tired little robot who's dedicated to tidying up our YouTube feeds.`,
+        stars: '-',
+        forks: '-',
+        language: 'CSS',
         links: [
             { label: 'chrome store ↗', url: 'https://chromewebstore.google.com/detail/focus-for-youtube/nppiofogichmlkadpbpkpojpidedifeh' },
             { label: 'firefox add-on ↗', url: 'https://addons.mozilla.org/en-US/firefox/addon/mono-extension/' },
         ],
     },
-    { repo: 'Aadam-Gafar/Mono-Video-Browser'},
+    {
+        repo: 'Aadam-Gafar/Mono-Video-Browser',
+        name: 'Mono Video Browser',
+        description: '[In development] A distraction-free, local video library manager built with Tauri, Rust, and SQLite. Organise, search, and browse your media collection with a virtual folder system. No cloud dependencies, no file alterations.',
+        stars: '-',
+        forks: '-',
+        language: 'JavaScript',
+    },
 ];
 
 // ── constants ─────────────────────────────────────────────────────────────────
@@ -181,10 +200,13 @@ function initMatrixGlitch(portrait, getArt) {
 // ── projects ──────────────────────────────────────────────────────────────────
 
 function buildCard(p, d) {
-    const lang = d?.language;
+    const lang = d?.language || p.language;
     const dot = lang && LANG_COLORS[lang] ? `<span class="lang-dot" style="background:${LANG_COLORS[lang]}"></span>` : '';
     const repoUrl = d?.html_url || `https://github.com/${p.repo}`;
-    const repoName = d?.name || p.repo.split('/').pop();
+    const repoName = d?.name || p.name || p.repo.split('/').pop();
+    const description = d?.description || p.description;
+    const stars = d?.stargazers_count ?? p.stars;
+    const forks = d?.forks_count ?? p.forks;
     const allLinks = [...(p.links || []), { label: 'github ↗', url: repoUrl }];
 
     return `<div class="card">
@@ -192,10 +214,10 @@ function buildCard(p, d) {
       ${link('card-title', repoUrl, repoName)}
       <div class="card-links">${allLinks.map(l => link('card-link', l.url, l.label)).join('')}</div>
     </div>
-    ${d?.description ? `<p class="card-desc prose">${d.description}</p>` : ''}
+    ${description ? `<p class="card-desc prose">${description}</p>` : ''}
     <div class="card-meta">
-      <span class="meta-item">${ICONS.star} ${d ? fmt(d.stargazers_count) : '—'}</span>
-      <span class="meta-item">${ICONS.fork} ${d ? fmt(d.forks_count) : '—'}</span>
+      <span class="meta-item">${ICONS.star} ${Number.isFinite(stars) ? fmt(stars) : '—'}</span>
+      <span class="meta-item">${ICONS.fork} ${Number.isFinite(forks) ? fmt(forks) : '—'}</span>
       ${lang ? `<span class="meta-item">${dot} ${lang}</span>` : ''}
     </div>
   </div>`;
