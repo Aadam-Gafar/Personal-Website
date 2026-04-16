@@ -35,11 +35,17 @@ const MATRIX_ART_FILES = {
     dark: 'face-dark.txt',
     light: 'face-light.txt',
 };
+const GITHUB_USER = 'Aadam-Gafar';
+const GITHUB_REPO_CACHE_KEY = 'githubRepoMetadata';
+const GITHUB_REPO_CACHE_TTL = 1000 * 60 * 60 * 6;
+let githubReposRequest;
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 const fmt = n => n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
-const link = (cls, href, text) => `<a class="${cls}" href="${href}" target="_blank" rel="noopener">${text}</a>`;
+const link = (cls, href, text) => href
+    ? `<a class="${cls}" href="${href}" target="_blank" rel="noopener">${text}</a>`
+    : `<span class="${cls}">${text}</span>`;
 
 function isLightTheme() {
     return document.body.classList.contains('light');
@@ -51,10 +57,63 @@ async function fetchMatrixArt(file) {
 }
 
 async function fetchRepo(path) {
+    const repos = await fetchGitHubRepos();
+    return repos.find(repo => repo.full_name?.toLowerCase() === path.toLowerCase()) || null;
+}
+
+function readGitHubRepoCache() {
     try {
-        const r = await fetch(`https://api.github.com/repos/${path}`);
-        return r.ok ? r.json() : null;
-    } catch { return null; }
+        const cache = JSON.parse(localStorage.getItem(GITHUB_REPO_CACHE_KEY));
+        return cache && Array.isArray(cache.data) ? cache : null;
+    } catch {
+        return null;
+    }
+}
+
+function writeGitHubRepoCache(data) {
+    try {
+        localStorage.setItem(GITHUB_REPO_CACHE_KEY, JSON.stringify({
+            createdAt: Date.now(),
+            data,
+        }));
+    } catch {
+        // Rendering should not depend on cache availability.
+    }
+}
+
+async function fetchGitHubRepos() {
+    const cache = readGitHubRepoCache();
+
+    if (cache && Date.now() - cache.createdAt < GITHUB_REPO_CACHE_TTL) {
+        return cache.data;
+    }
+
+    if (githubReposRequest) {
+        return githubReposRequest;
+    }
+
+    githubReposRequest = fetchGitHubReposFromApi(cache);
+    return githubReposRequest;
+}
+
+async function fetchGitHubReposFromApi(cache) {
+    try {
+        const r = await fetch(`https://api.github.com/users/${GITHUB_USER}/repos?per_page=100`, {
+            headers: { Accept: 'application/vnd.github+json' },
+        });
+
+        if (!r.ok) {
+            console.warn(`GitHub metadata unavailable: ${r.status} ${r.statusText}`);
+            return cache?.data || [];
+        }
+
+        const repos = await r.json();
+        writeGitHubRepoCache(repos);
+        return repos;
+    } catch (error) {
+        console.warn('GitHub metadata unavailable:', error);
+        return cache?.data || [];
+    }
 }
 
 async function initMatrixPortrait() {
@@ -124,11 +183,13 @@ function initMatrixGlitch(portrait, getArt) {
 function buildCard(p, d) {
     const lang = d?.language;
     const dot = lang && LANG_COLORS[lang] ? `<span class="lang-dot" style="background:${LANG_COLORS[lang]}"></span>` : '';
-    const allLinks = [...(p.links || []), { label: 'github ↗', url: d?.html_url }];
+    const repoUrl = d?.html_url || `https://github.com/${p.repo}`;
+    const repoName = d?.name || p.repo.split('/').pop();
+    const allLinks = [...(p.links || []), { label: 'github ↗', url: repoUrl }];
 
     return `<div class="card">
     <div class="card-header">
-      ${link('card-title', d?.html_url, d?.name || p.repo.split('/')[1])}
+      ${link('card-title', repoUrl, repoName)}
       <div class="card-links">${allLinks.map(l => link('card-link', l.url, l.label)).join('')}</div>
     </div>
     ${d?.description ? `<p class="card-desc prose">${d.description}</p>` : ''}
@@ -145,7 +206,8 @@ async function initProjects() {
     grid.innerHTML = REPOS.map(() =>
         `<div class="card"><p class="loading">fetching...</p></div>`
     ).join('');
-    const data = await Promise.all(REPOS.map(p => fetchRepo(p.repo)));
+    const repos = await fetchGitHubRepos();
+    const data = REPOS.map(p => repos.find(repo => repo.full_name?.toLowerCase() === p.repo.toLowerCase()) || null);
     grid.innerHTML = REPOS.map((p, i) => buildCard(p, data[i])).join('');
 }
 
