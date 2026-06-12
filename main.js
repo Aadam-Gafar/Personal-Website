@@ -1,9 +1,9 @@
 // ── config ────────────────────────────────────────────────────────────────────
 // Add a project: { repo: 'user/repo', links?: [{ label, url }] }
 // GitHub supplies name, desc, URL, stars, forks, language automatically.
-// links[] is for anything GitHub doesn't know (store URLs, live demos, etc.)
+// links[] holds every card link (repos, store URLs, live demos, etc.)
 
-const REPOS = [
+const PROJECTS = [
     {
         repo: 'Aadam-Gafar/Weight-Forecasting-Pipeline',
         name: 'Weight Forecasting Pipeline',
@@ -11,6 +11,9 @@ const REPOS = [
         stars: '-',
         forks: '-',
         language: 'Jupyter Notebook',
+        links: [
+            { label: 'github ↗', url: 'https://github.com/Aadam-Gafar/Weight-Forecasting-Pipeline' },
+        ],
     },
     {
         repo: 'Aadam-Gafar/Mono-Hub',
@@ -20,7 +23,8 @@ const REPOS = [
         forks: '-',
         language: 'CSS',
         links: [
-            { label: 'website ↗', url: 'https://monoapp.uk' }        ]
+            { label: 'website ↗', url: 'https://monoapp.uk' }
+        ],
     },
 ];
 
@@ -294,13 +298,11 @@ function buildCard(p, d) {
     const description = d?.description || p.description;
     const stars = d?.stargazers_count ?? p.stars;
     const forks = d?.forks_count ?? p.forks;
-    const allLinks = [...(p.links || []), { label: 'github ↗', url: repoUrl }];
-
     return `<article class="card">
     <div class="card-body">
       <div class="card-header">
         ${link('card-title', repoUrl, repoName)}
-        <div class="card-links">${allLinks.map(l => link('card-link', l.url, l.label)).join('')}</div>
+        <div class="card-links">${(p.links || []).map(l => link('card-link', l.url, l.label)).join('')}</div>
       </div>
       ${description ? `<p class="card-desc prose">${description}</p>` : ''}
       <div class="card-meta">
@@ -314,12 +316,12 @@ function buildCard(p, d) {
 
 async function initProjects() {
     const grid = document.getElementById('project-grid');
-    grid.innerHTML = REPOS.map(() =>
+    grid.innerHTML = PROJECTS.map(() =>
         `<div class="card"><p class="loading">retrieving records ...</p></div>`
     ).join('');
     const repos = await fetchGitHubRepos();
-    const data = REPOS.map(p => repos.find(repo => repo.full_name?.toLowerCase() === p.repo.toLowerCase()) || null);
-    grid.innerHTML = REPOS.map((p, i) => buildCard(p, data[i])).join('');
+    const data = PROJECTS.map(p => repos.find(repo => repo.full_name?.toLowerCase() === p.repo.toLowerCase()) || null);
+    grid.innerHTML = PROJECTS.map((p, i) => buildCard(p, data[i])).join('');
 }
 
 // ── contact form ──────────────────────────────────────────────────────────────

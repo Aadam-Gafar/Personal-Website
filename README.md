@@ -17,7 +17,7 @@ A personal portfolio and CV built with plain HTML, CSS, and JavaScript.
 
 ## Project Data
 
-Featured projects are configured in `main.js` through the `REPOS` array. Each entry can provide fallback metadata and optional extra links:
+Featured projects are configured in `main.js` through the `PROJECTS` array. Each entry can provide fallback metadata and the card's links (GitHub repo, store URLs, live demos, etc.):
 
 ```js
 {
@@ -27,6 +27,7 @@ Featured projects are configured in `main.js` through the `REPOS` array. Each en
   language: 'CSS',
   links: [
     { label: 'chrome store', url: '...' },
+    { label: 'github ↗', url: 'https://github.com/Aadam-Gafar/Mono-YouTube-Extension' },
   ],
 }
 ```
