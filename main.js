@@ -70,11 +70,6 @@ async function fetchMatrixArt(file) {
     return r.ok ? (await r.text()).replace(/\r\n?/g, '\n') : '';
 }
 
-async function fetchRepo(path) {
-    const repos = await fetchGitHubRepos();
-    return repos.find(repo => repo.full_name?.toLowerCase() === path.toLowerCase()) || null;
-}
-
 function readGitHubRepoCache() {
     try {
         const cache = JSON.parse(localStorage.getItem(GITHUB_REPO_CACHE_KEY));
@@ -130,6 +125,9 @@ async function fetchGitHubReposFromApi(cache) {
     }
 }
 
+// The portrait is ~36k characters. It renders as one element per row so
+// every animation frame touches only the few affected rows (~256 chars)
+// instead of re-parsing the whole artwork into DOM.
 async function initMatrixPortrait() {
     const portrait = document.getElementById('matrix-portrait');
     if (!portrait) return;
@@ -138,10 +136,17 @@ async function initMatrixPortrait() {
         const art = await fetchMatrixArt(MATRIX_ART_FILE);
         if (!art) return;
 
-        await initPortraitScale(portrait, art);
+        const rows = art.split('\n');
+        const rowEls = rows.map(row => {
+            const el = document.createElement('span');
+            el.className = 'ascii-row';
+            el.textContent = row;
+            return el;
+        });
 
-        const getArt = () => art;
-        const start = () => flowInPortrait(portrait, art, () => initMatrixGlitch(portrait, getArt));
+        await initPortraitScale(portrait, rowEls);
+
+        const start = () => flowInPortrait(rowEls, rows, () => initMatrixGlitch(rowEls, rows));
 
         if (document.documentElement.classList.contains('booting')) {
             window.addEventListener('bootdone', start, { once: true });
@@ -155,17 +160,25 @@ async function initMatrixPortrait() {
 
 // measures the art at its fixed cell size, then fits it to the viewport with
 // a uniform scale — aspect ratio stays exact at every screen size
-async function initPortraitScale(portrait, art) {
+async function initPortraitScale(portrait, rowEls) {
     await document.fonts.ready; // fallback-font metrics would skew the measurement
 
+    const frag = document.createDocumentFragment();
+    rowEls.forEach(el => frag.appendChild(el));
+
     portrait.style.visibility = 'hidden';
-    portrait.textContent = art;
+    portrait.appendChild(frag);
     const naturalWidth = portrait.offsetWidth;
     const naturalHeight = portrait.offsetHeight;
-    portrait.textContent = '';
+    rowEls.forEach(el => { el.textContent = ''; }); // blank until the flow-in
     portrait.style.visibility = '';
 
     if (!naturalWidth || !naturalHeight) return;
+
+    // lock the measured size: layout stays fixed while rows fill in,
+    // so the centring never shifts and content edits stay cheap
+    portrait.style.width = `${naturalWidth}px`;
+    portrait.style.height = `${naturalHeight}px`;
 
     const fit = () => {
         const scale = Math.min(
@@ -175,40 +188,50 @@ async function initPortraitScale(portrait, art) {
         portrait.style.setProperty('--portrait-scale', scale.toFixed(4));
     };
 
+    // transform-only update, throttled to one per rendered frame
+    let scheduled = 0;
+    const onResize = () => {
+        if (scheduled) return;
+        scheduled = requestAnimationFrame(() => { scheduled = 0; fit(); });
+    };
+
     fit();
-    window.addEventListener('resize', fit);
+    window.addEventListener('resize', onResize);
 }
 
+const scrambleRow = row => [...row].map(char =>
+    /\S/.test(char)
+        ? MATRIX_GLITCH_SYMBOLS[Math.floor(Math.random() * MATRIX_GLITCH_SYMBOLS.length)]
+        : char
+).join('');
+
 // reveals the art top-to-bottom: a scrambled leading edge sweeps down,
-// resolving into the final characters row by row
-function flowInPortrait(portrait, art, done) {
+// resolving into the final characters row by row. Each frame writes only the
+// rows entering or leaving the edge zone.
+function flowInPortrait(rowEls, rows, done) {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        portrait.textContent = art;
+        rowEls.forEach((el, i) => { el.textContent = rows[i]; });
         done();
         return;
     }
 
-    const rows = art.split('\n');
-    const scramble = row => [...row].map(char =>
-        /\S/.test(char)
-            ? MATRIX_GLITCH_SYMBOLS[Math.floor(Math.random() * MATRIX_GLITCH_SYMBOLS.length)]
-            : char
-    ).join('');
-
     let edge = 0;
 
     const step = () => {
+        for (let i = Math.max(edge - FLOW_ROWS_PER_FRAME, 0); i < Math.min(edge, rows.length); i++) {
+            rowEls[i].classList.remove('matrix-glitch');
+            rowEls[i].textContent = rows[i];
+        }
+
         if (edge >= rows.length) {
-            portrait.textContent = art;
             done();
             return;
         }
 
-        portrait.innerHTML = rows.map((row, i) => {
-            if (i < edge) return escapeHtml(row);
-            if (i < edge + FLOW_EDGE_ROWS) return `<span class="matrix-glitch">${escapeHtml(scramble(row))}</span>`;
-            return '';
-        }).join('\n');
+        for (let i = edge; i < Math.min(edge + FLOW_EDGE_ROWS, rows.length); i++) {
+            rowEls[i].classList.add('matrix-glitch');
+            rowEls[i].textContent = scrambleRow(rows[i]);
+        }
 
         edge += FLOW_ROWS_PER_FRAME;
         window.setTimeout(step, FLOW_INTERVAL);
@@ -217,39 +240,43 @@ function flowInPortrait(portrait, art, done) {
     step();
 }
 
-function initMatrixGlitch(portrait, getArt) {
+function initMatrixGlitch(rowEls, rows) {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const renderGlitchFrame = (source, picked) => {
-        portrait.innerHTML = source.map((char, index) => {
-            if (!picked.has(index)) return escapeHtml(char);
+    // every glitchable [row, col] position, computed once
+    const positions = [];
+    rows.forEach((row, r) => {
+        for (let c = 0; c < row.length; c++) {
+            if (/\S/.test(row[c])) positions.push([r, c]);
+        }
+    });
 
-            const symbol = MATRIX_GLITCH_SYMBOLS[Math.floor(Math.random() * MATRIX_GLITCH_SYMBOLS.length)];
-            return `<span class="matrix-glitch">${escapeHtml(symbol)}</span>`;
-        }).join('');
-    };
+    if (!positions.length) return;
 
     const glitch = () => {
-        const source = [...getArt()];
-        const glitchable = [];
-
-        source.forEach((char, index) => {
-            if (/\S/.test(char)) glitchable.push(index);
-        });
-
-        if (!glitchable.length) return;
-
-        const picked = new Set();
-        const count = Math.min(MATRIX_GLITCH_COUNT, glitchable.length);
-
-        while (picked.size < count) {
-            picked.add(glitchable[Math.floor(Math.random() * glitchable.length)]);
+        if (document.hidden) { // tab in background: idle instead of animating
+            window.setTimeout(glitch, 1000);
+            return;
         }
 
-        renderGlitchFrame(source, picked);
+        const byRow = new Map();
+        for (let n = 0; n < MATRIX_GLITCH_COUNT; n++) {
+            const [r, c] = positions[Math.floor(Math.random() * positions.length)];
+            if (!byRow.has(r)) byRow.set(r, new Set());
+            byRow.get(r).add(c);
+        }
+
+        byRow.forEach((cols, r) => {
+            rowEls[r].innerHTML = [...rows[r]].map((char, c) => {
+                if (!cols.has(c)) return escapeHtml(char);
+
+                const symbol = MATRIX_GLITCH_SYMBOLS[Math.floor(Math.random() * MATRIX_GLITCH_SYMBOLS.length)];
+                return `<span class="matrix-glitch">${escapeHtml(symbol)}</span>`;
+            }).join('');
+        });
 
         window.setTimeout(() => {
-            portrait.textContent = getArt();
+            byRow.forEach((cols, r) => { rowEls[r].textContent = rows[r]; });
             window.setTimeout(glitch, MATRIX_GLITCH_INTERVAL);
         }, MATRIX_GLITCH_LENGTH);
     };
