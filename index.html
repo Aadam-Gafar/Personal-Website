@@ -11,10 +11,18 @@
     <meta property="og:image" content="https://aadamgafar.com/art/screenshot.png">
     <title>aadam gafar - data scientist</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/svg+xml" href="art/icon.svg">
+    <script>
+        // boot gate: hide everything but the prompt until main.js finishes the
+        // typing sequence. Failsafe reveal in case main.js never loads.
+        if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            document.documentElement.classList.add('booting');
+            setTimeout(function () { document.documentElement.classList.remove('booting'); }, 4000);
+        }
+    </script>
 </head>
 
 <body>

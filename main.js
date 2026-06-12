@@ -31,6 +31,14 @@ const LANG_COLORS = {
     CSS: '#563d7c', TypeScript: '#2b7489', 'Jupyter Notebook': '#DA5B0B',
 };
 
+const BOOT_START_DELAY = 180;
+const BOOT_TYPE_SPEED = 24;
+const BOOT_ENTER_DELAY = 1000;
+const FLOW_INTERVAL = 24;
+const FLOW_ROWS_PER_FRAME = 2;
+const FLOW_EDGE_ROWS = 3;
+const DECODE_INTERVAL = 16;
+const DECODE_CHARS_PER_FRAME = 2;
 const MATRIX_GLITCH_SYMBOLS = '@#%&$WM8B';
 const MATRIX_GLITCH_COUNT = 10;
 const MATRIX_GLITCH_LENGTH = 500;
@@ -129,11 +137,54 @@ async function initMatrixPortrait() {
         if (!art) return;
 
         const getArt = () => art;
-        portrait.textContent = art;
-        initMatrixGlitch(portrait, getArt);
+        const start = () => flowInPortrait(portrait, art, () => initMatrixGlitch(portrait, getArt));
+
+        if (document.documentElement.classList.contains('booting')) {
+            window.addEventListener('bootdone', start, { once: true });
+        } else {
+            start();
+        }
     } catch {
         portrait.remove();
     }
+}
+
+// reveals the art top-to-bottom: a scrambled leading edge sweeps down,
+// resolving into the final characters row by row
+function flowInPortrait(portrait, art, done) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        portrait.textContent = art;
+        done();
+        return;
+    }
+
+    const rows = art.split('\n');
+    const scramble = row => [...row].map(char =>
+        /\S/.test(char)
+            ? MATRIX_GLITCH_SYMBOLS[Math.floor(Math.random() * MATRIX_GLITCH_SYMBOLS.length)]
+            : char
+    ).join('');
+
+    let edge = 0;
+
+    const step = () => {
+        if (edge >= rows.length) {
+            portrait.textContent = art;
+            done();
+            return;
+        }
+
+        portrait.innerHTML = rows.map((row, i) => {
+            if (i < edge) return escapeHtml(row);
+            if (i < edge + FLOW_EDGE_ROWS) return `<span class="matrix-glitch">${escapeHtml(scramble(row))}</span>`;
+            return '';
+        }).join('\n');
+
+        edge += FLOW_ROWS_PER_FRAME;
+        window.setTimeout(step, FLOW_INTERVAL);
+    };
+
+    step();
 }
 
 function initMatrixGlitch(portrait, getArt) {
@@ -228,8 +279,75 @@ function initContact() {
     });
 }
 
+// ── boot sequence ─────────────────────────────────────────────────────────────
+// Types the masthead prompt, "presses enter", then reveals the page by
+// dropping html.booting (set inline in <head>; absent for reduced motion).
+
+function initBootSequence() {
+    const root = document.documentElement;
+    if (!root.classList.contains('booting')) return;
+
+    const reveal = () => {
+        root.classList.remove('booting');
+        decodeText(document.querySelector('h1'));
+        window.dispatchEvent(new Event('bootdone'));
+    };
+    const cursor = document.querySelector('.cursor');
+    const promptText = document.querySelector('.prompt > span')?.firstChild;
+
+    if (!promptText) {
+        reveal();
+        return;
+    }
+
+    const fullText = promptText.textContent;
+    let typed = 0;
+    promptText.textContent = '';
+
+    const type = () => {
+        typed += 1;
+        promptText.textContent = fullText.slice(0, typed);
+
+        if (typed < fullText.length) {
+            window.setTimeout(type, BOOT_TYPE_SPEED);
+        } else {
+            cursor?.classList.add('waiting');            // cursor blinks while idle
+            window.setTimeout(reveal, BOOT_ENTER_DELAY); // enter ↵
+        }
+    };
+
+    window.setTimeout(type, BOOT_START_DELAY);
+}
+
+// resolves an element's text left to right from scrambled glitch characters
+function decodeText(el) {
+    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const finalText = el.textContent;
+    let resolved = 0;
+
+    const step = () => {
+        if (resolved >= finalText.length) {
+            el.textContent = finalText;
+            return;
+        }
+
+        el.textContent = [...finalText].map((char, i) =>
+            i < resolved || !/\S/.test(char)
+                ? char
+                : MATRIX_GLITCH_SYMBOLS[Math.floor(Math.random() * MATRIX_GLITCH_SYMBOLS.length)]
+        ).join('');
+
+        resolved += DECODE_CHARS_PER_FRAME;
+        window.setTimeout(step, DECODE_INTERVAL);
+    };
+
+    step();
+}
+
 // ── init ──────────────────────────────────────────────────────────────────────
 
+initBootSequence();
 initMatrixPortrait();
 initProjects();
 initContact();
