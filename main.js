@@ -1,27 +1,20 @@
 // ── config ────────────────────────────────────────────────────────────────────
-// Add a project: { repo: 'user/repo', links?: [{ label, url }] }
-// GitHub supplies name, desc, URL, stars, forks, language automatically.
+// Add a project: { name, description, languages?: [], links?: [{ label, url }] }
 // links[] holds every card link (repos, store URLs, live demos, etc.)
 
 const PROJECTS = [
     {
-        repo: 'Aadam-Gafar/Weight-Forecasting-Pipeline',
         name: 'Weight Forecasting Pipeline',
         description: 'Weight forecasting pipeline for athletes using daily nutrition data. Predicts weight trajectory from MacroFactor exports to support controlled weight cuts for combat sports.',
-        stars: '-',
-        forks: '-',
-        language: 'Jupyter Notebook',
+        languages: ['Jupyter Notebook'],
         links: [
             { label: 'github ↗', url: 'https://github.com/Aadam-Gafar/Weight-Forecasting-Pipeline' },
         ],
     },
     {
-        repo: 'Aadam-Gafar/Mono-Hub',
-        name: 'Mono Hub',
+        name: 'Mono for Desktop & YouTube',
         description: `The official landing page for Mono, a suite of distraction-free tools designed to help users reclaim their time. Includes: 'Mono for Desktop' and 'Mono for YouTube'.`,
-        stars: '-',
-        forks: '-',
-        language: 'CSS',
+        languages: ['HTML', 'CSS', 'JavaScript', 'Rust'],
         links: [
             { label: 'website ↗', url: 'https://monoapp.uk' }
         ],
@@ -33,6 +26,7 @@ const PROJECTS = [
 const LANG_COLORS = {
     Python: '#3572A5', JavaScript: '#f1e05a', HTML: '#e34c26',
     CSS: '#563d7c', TypeScript: '#2b7489', 'Jupyter Notebook': '#DA5B0B',
+    Rust: '#dea584',
 };
 
 const BOOT_START_DELAY = 180;
@@ -50,14 +44,9 @@ const MATRIX_GLITCH_COUNT = 10;
 const MATRIX_GLITCH_LENGTH = 500;
 const MATRIX_GLITCH_INTERVAL = 100;
 const MATRIX_ART_FILE = 'face.txt';
-const GITHUB_USER = 'Aadam-Gafar';
-const GITHUB_REPO_CACHE_KEY = 'githubRepoMetadata';
-const GITHUB_REPO_CACHE_TTL = 1000 * 60 * 60 * 6;
-let githubReposRequest;
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-const fmt = n => n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n).padStart(3, '0');
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({
     '&': '&amp;',
     '<': '&lt;',
@@ -72,61 +61,6 @@ const link = (cls, href, text) => href
 async function fetchMatrixArt(file) {
     const r = await fetch(file, { cache: 'force-cache' });
     return r.ok ? (await r.text()).replace(/\r\n?/g, '\n') : '';
-}
-
-function readGitHubRepoCache() {
-    try {
-        const cache = JSON.parse(localStorage.getItem(GITHUB_REPO_CACHE_KEY));
-        return cache && Array.isArray(cache.data) ? cache : null;
-    } catch {
-        return null;
-    }
-}
-
-function writeGitHubRepoCache(data) {
-    try {
-        localStorage.setItem(GITHUB_REPO_CACHE_KEY, JSON.stringify({
-            createdAt: Date.now(),
-            data,
-        }));
-    } catch {
-        // Rendering should not depend on cache availability.
-    }
-}
-
-async function fetchGitHubRepos() {
-    const cache = readGitHubRepoCache();
-
-    if (cache && Date.now() - cache.createdAt < GITHUB_REPO_CACHE_TTL) {
-        return cache.data;
-    }
-
-    if (githubReposRequest) {
-        return githubReposRequest;
-    }
-
-    githubReposRequest = fetchGitHubReposFromApi(cache);
-    return githubReposRequest;
-}
-
-async function fetchGitHubReposFromApi(cache) {
-    try {
-        const r = await fetch(`https://api.github.com/users/${GITHUB_USER}/repos?per_page=100`, {
-            headers: { Accept: 'application/vnd.github+json' },
-        });
-
-        if (!r.ok) {
-            console.warn(`GitHub metadata unavailable: ${r.status} ${r.statusText}`);
-            return cache?.data || [];
-        }
-
-        const repos = await r.json();
-        writeGitHubRepoCache(repos);
-        return repos;
-    } catch (error) {
-        console.warn('GitHub metadata unavailable:', error);
-        return cache?.data || [];
-    }
 }
 
 // The portrait is ~36k characters. It renders as one element per row so
@@ -290,38 +224,26 @@ function initMatrixGlitch(rowEls, rows) {
 
 // ── projects ──────────────────────────────────────────────────────────────────
 
-function buildCard(p, d) {
-    const lang = d?.language || p.language;
-    const dot = lang && LANG_COLORS[lang] ? `<span class="lang-dot" style="background:${LANG_COLORS[lang]}"></span>` : '';
-    const repoUrl = d?.html_url || `https://github.com/${p.repo}`;
-    const repoName = d?.name || p.name || p.repo.split('/').pop();
-    const description = d?.description || p.description;
-    const stars = d?.stargazers_count ?? p.stars;
-    const forks = d?.forks_count ?? p.forks;
+function buildCard(p) {
+    const titleUrl = p.links?.[0]?.url;
+    const langs = (p.languages || []).map(lang => {
+        const dot = LANG_COLORS[lang] ? `<span class="lang-dot" style="background:${LANG_COLORS[lang]}"></span>` : '';
+        return `<span class="meta-item">${dot} ${lang}</span>`;
+    }).join('');
     return `<article class="card">
     <div class="card-body">
       <div class="card-header">
-        ${link('card-title', repoUrl, repoName)}
+        ${link('card-title', titleUrl, p.name)}
         <div class="card-links">${(p.links || []).map(l => link('card-link', l.url, l.label)).join('')}</div>
       </div>
-      ${description ? `<p class="card-desc prose">${description}</p>` : ''}
-      <div class="card-meta">
-        <span class="meta-item">STARS <b>${Number.isFinite(stars) ? fmt(stars) : '—'}</b></span>
-        <span class="meta-item">FORKS <b>${Number.isFinite(forks) ? fmt(forks) : '—'}</b></span>
-        ${lang ? `<span class="meta-item">${dot} ${lang}</span>` : ''}
-      </div>
+      ${p.description ? `<p class="card-desc prose">${p.description}</p>` : ''}
+      ${langs ? `<div class="card-meta">${langs}</div>` : ''}
     </div>
   </article>`;
 }
 
-async function initProjects() {
-    const grid = document.getElementById('project-grid');
-    grid.innerHTML = PROJECTS.map(() =>
-        `<div class="card"><p class="loading">retrieving records ...</p></div>`
-    ).join('');
-    const repos = await fetchGitHubRepos();
-    const data = PROJECTS.map(p => repos.find(repo => repo.full_name?.toLowerCase() === p.repo.toLowerCase()) || null);
-    grid.innerHTML = PROJECTS.map((p, i) => buildCard(p, data[i])).join('');
+function initProjects() {
+    document.getElementById('project-grid').innerHTML = PROJECTS.map(buildCard).join('');
 }
 
 // ── contact form ──────────────────────────────────────────────────────────────
