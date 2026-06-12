@@ -1,26 +1,23 @@
 // ── config ────────────────────────────────────────────────────────────────────
-// Add a project: { repo: 'user/repo', links?: [{ label, url }] }
-// GitHub supplies name, desc, URL, stars, forks, language automatically.
-// links[] is for anything GitHub doesn't know (store URLs, live demos, etc.)
+// Add a project: { name, description, languages?: [], links?: [{ label, url }] }
+// links[] holds every card link (repos, store URLs, live demos, etc.)
 
-const REPOS = [
+const PROJECTS = [
     {
-        repo: 'Aadam-Gafar/Weight-Forecasting-Pipeline',
         name: 'Weight Forecasting Pipeline',
         description: 'Weight forecasting pipeline for athletes using daily nutrition data. Predicts weight trajectory from MacroFactor exports to support controlled weight cuts for combat sports.',
-        stars: '-',
-        forks: '-',
-        language: 'Jupyter Notebook',
+        languages: ['Jupyter Notebook'],
+        links: [
+            { label: 'github ↗', url: 'https://github.com/Aadam-Gafar/Weight-Forecasting-Pipeline' },
+        ],
     },
     {
-        repo: 'Aadam-Gafar/Mono-Hub',
-        name: 'Mono Hub',
+        name: 'Mono for Desktop & YouTube',
         description: `The official landing page for Mono, a suite of distraction-free tools designed to help users reclaim their time. Includes: 'Mono for Desktop' and 'Mono for YouTube'.`,
-        stars: '-',
-        forks: '-',
-        language: 'CSS',
+        languages: ['HTML', 'CSS', 'JavaScript', 'Rust'],
         links: [
-            { label: 'website ↗', url: 'https://monoapp.uk' }        ]
+            { label: 'website ↗', url: 'https://monoapp.uk' }
+        ],
     },
 ];
 
@@ -29,29 +26,27 @@ const REPOS = [
 const LANG_COLORS = {
     Python: '#3572A5', JavaScript: '#f1e05a', HTML: '#e34c26',
     CSS: '#563d7c', TypeScript: '#2b7489', 'Jupyter Notebook': '#DA5B0B',
+    Rust: '#dea584',
 };
 
-const ICONS = {
-    star: `<svg viewBox="0 0 16 16"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25z"/></svg>`,
-    fork: `<svg viewBox="0 0 16 16"><path d="M5 5.372v.878c0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75v-.878a2.25 2.25 0 1 1 1.5 0v.878a2.25 2.25 0 0 1-2.25 2.25h-1.5v2.128a2.251 2.251 0 1 1-1.5 0V8.5h-1.5A2.25 2.25 0 0 1 3.5 6.25v-.878a2.25 2.25 0 1 1 1.5 0zM5 3.25a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0zm6.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5zm-3 8.75a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0z"/></svg>`,
-};
-
+const BOOT_START_DELAY = 180;
+const BOOT_TYPE_SPEED = 24;
+const BOOT_ENTER_DELAY = 1000;
+const FLOW_INTERVAL = 24;
+const FLOW_ROWS_PER_FRAME = 4;
+const FLOW_EDGE_ROWS = 6;
+const DECODE_INTERVAL = 16;
+const DECODE_CHARS_PER_FRAME = 2;
+const PORTRAIT_MAX_VW = .92;
+const PORTRAIT_MAX_VH = .7;
 const MATRIX_GLITCH_SYMBOLS = '@#%&$WM8B';
 const MATRIX_GLITCH_COUNT = 10;
 const MATRIX_GLITCH_LENGTH = 500;
 const MATRIX_GLITCH_INTERVAL = 100;
-const MATRIX_ART_FILES = {
-    dark: 'face-dark.txt',
-    light: 'face-light.txt',
-};
-const GITHUB_USER = 'Aadam-Gafar';
-const GITHUB_REPO_CACHE_KEY = 'githubRepoMetadata';
-const GITHUB_REPO_CACHE_TTL = 1000 * 60 * 60 * 6;
-let githubReposRequest;
+const MATRIX_ART_FILE = 'face.txt';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-const fmt = n => n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({
     '&': '&amp;',
     '<': '&lt;',
@@ -63,134 +58,163 @@ const link = (cls, href, text) => href
     ? `<a class="${cls}" href="${href}" target="_blank" rel="noopener">${text}</a>`
     : `<span class="${cls}">${text}</span>`;
 
-function isLightTheme() {
-    return document.body.classList.contains('light');
-}
-
 async function fetchMatrixArt(file) {
     const r = await fetch(file, { cache: 'force-cache' });
     return r.ok ? (await r.text()).replace(/\r\n?/g, '\n') : '';
 }
 
-async function fetchRepo(path) {
-    const repos = await fetchGitHubRepos();
-    return repos.find(repo => repo.full_name?.toLowerCase() === path.toLowerCase()) || null;
-}
-
-function readGitHubRepoCache() {
-    try {
-        const cache = JSON.parse(localStorage.getItem(GITHUB_REPO_CACHE_KEY));
-        return cache && Array.isArray(cache.data) ? cache : null;
-    } catch {
-        return null;
-    }
-}
-
-function writeGitHubRepoCache(data) {
-    try {
-        localStorage.setItem(GITHUB_REPO_CACHE_KEY, JSON.stringify({
-            createdAt: Date.now(),
-            data,
-        }));
-    } catch {
-        // Rendering should not depend on cache availability.
-    }
-}
-
-async function fetchGitHubRepos() {
-    const cache = readGitHubRepoCache();
-
-    if (cache && Date.now() - cache.createdAt < GITHUB_REPO_CACHE_TTL) {
-        return cache.data;
-    }
-
-    if (githubReposRequest) {
-        return githubReposRequest;
-    }
-
-    githubReposRequest = fetchGitHubReposFromApi(cache);
-    return githubReposRequest;
-}
-
-async function fetchGitHubReposFromApi(cache) {
-    try {
-        const r = await fetch(`https://api.github.com/users/${GITHUB_USER}/repos?per_page=100`, {
-            headers: { Accept: 'application/vnd.github+json' },
-        });
-
-        if (!r.ok) {
-            console.warn(`GitHub metadata unavailable: ${r.status} ${r.statusText}`);
-            return cache?.data || [];
-        }
-
-        const repos = await r.json();
-        writeGitHubRepoCache(repos);
-        return repos;
-    } catch (error) {
-        console.warn('GitHub metadata unavailable:', error);
-        return cache?.data || [];
-    }
-}
-
+// The portrait is ~36k characters. It renders as one element per row so
+// every animation frame touches only the few affected rows (~256 chars)
+// instead of re-parsing the whole artwork into DOM.
 async function initMatrixPortrait() {
     const portrait = document.getElementById('matrix-portrait');
     if (!portrait) return;
 
     try {
-        const [darkArt, lightArt] = await Promise.all([
-            fetchMatrixArt(MATRIX_ART_FILES.dark),
-            fetchMatrixArt(MATRIX_ART_FILES.light),
-        ]);
-        if (!darkArt && !lightArt) return;
+        const art = await fetchMatrixArt(MATRIX_ART_FILE);
+        if (!art) return;
 
-        const art = {
-            dark: darkArt || lightArt,
-            light: lightArt || darkArt,
-        };
-        const getArt = () => isLightTheme() ? art.light : art.dark;
-        const render = () => { portrait.textContent = getArt(); };
+        const rows = art.split('\n');
+        const rowEls = rows.map(row => {
+            const el = document.createElement('span');
+            el.className = 'ascii-row';
+            el.textContent = row;
+            return el;
+        });
 
-        render();
-        window.addEventListener('themechange', render);
-        initMatrixGlitch(portrait, getArt);
+        await initPortraitScale(portrait, rowEls);
+
+        const start = () => flowInPortrait(rowEls, rows, () => initMatrixGlitch(rowEls, rows));
+
+        if (document.documentElement.classList.contains('booting')) {
+            window.addEventListener('bootdone', start, { once: true });
+        } else {
+            start();
+        }
     } catch {
         portrait.remove();
     }
 }
 
-function initMatrixGlitch(portrait, getArt) {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+// measures the art at its fixed cell size, then fits it to the viewport with
+// a uniform scale — aspect ratio stays exact at every screen size
+async function initPortraitScale(portrait, rowEls) {
+    await document.fonts.ready; // fallback-font metrics would skew the measurement
 
-    const renderGlitchFrame = (source, picked) => {
-        portrait.innerHTML = source.map((char, index) => {
-            if (!picked.has(index)) return escapeHtml(char);
+    const frag = document.createDocumentFragment();
+    rowEls.forEach(el => frag.appendChild(el));
 
-            const symbol = MATRIX_GLITCH_SYMBOLS[Math.floor(Math.random() * MATRIX_GLITCH_SYMBOLS.length)];
-            return `<span class="matrix-glitch">${escapeHtml(symbol)}</span>`;
-        }).join('');
+    portrait.style.visibility = 'hidden';
+    portrait.appendChild(frag);
+    const naturalWidth = portrait.offsetWidth;
+    const naturalHeight = portrait.offsetHeight;
+    rowEls.forEach(el => { el.textContent = ''; }); // blank until the flow-in
+    portrait.style.visibility = '';
+
+    if (!naturalWidth || !naturalHeight) return;
+
+    // lock the measured size: layout stays fixed while rows fill in,
+    // so the centring never shifts and content edits stay cheap
+    portrait.style.width = `${naturalWidth}px`;
+    portrait.style.height = `${naturalHeight}px`;
+
+    const fit = () => {
+        const scale = Math.min(
+            (window.innerWidth * PORTRAIT_MAX_VW) / naturalWidth,
+            (window.innerHeight * PORTRAIT_MAX_VH) / naturalHeight,
+        );
+        portrait.style.setProperty('--portrait-scale', scale.toFixed(4));
     };
 
-    const glitch = () => {
-        const source = [...getArt()];
-        const glitchable = [];
+    // transform-only update, throttled to one per rendered frame
+    let scheduled = 0;
+    const onResize = () => {
+        if (scheduled) return;
+        scheduled = requestAnimationFrame(() => { scheduled = 0; fit(); });
+    };
 
-        source.forEach((char, index) => {
-            if (/\S/.test(char)) glitchable.push(index);
-        });
+    fit();
+    window.addEventListener('resize', onResize);
+}
 
-        if (!glitchable.length) return;
+const scrambleRow = row => [...row].map(char =>
+    /\S/.test(char)
+        ? MATRIX_GLITCH_SYMBOLS[Math.floor(Math.random() * MATRIX_GLITCH_SYMBOLS.length)]
+        : char
+).join('');
 
-        const picked = new Set();
-        const count = Math.min(MATRIX_GLITCH_COUNT, glitchable.length);
+// reveals the art top-to-bottom: a scrambled leading edge sweeps down,
+// resolving into the final characters row by row. Each frame writes only the
+// rows entering or leaving the edge zone.
+function flowInPortrait(rowEls, rows, done) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        rowEls.forEach((el, i) => { el.textContent = rows[i]; });
+        done();
+        return;
+    }
 
-        while (picked.size < count) {
-            picked.add(glitchable[Math.floor(Math.random() * glitchable.length)]);
+    let edge = 0;
+
+    const step = () => {
+        for (let i = Math.max(edge - FLOW_ROWS_PER_FRAME, 0); i < Math.min(edge, rows.length); i++) {
+            rowEls[i].classList.remove('matrix-glitch');
+            rowEls[i].textContent = rows[i];
         }
 
-        renderGlitchFrame(source, picked);
+        if (edge >= rows.length) {
+            done();
+            return;
+        }
+
+        for (let i = edge; i < Math.min(edge + FLOW_EDGE_ROWS, rows.length); i++) {
+            rowEls[i].classList.add('matrix-glitch');
+            rowEls[i].textContent = scrambleRow(rows[i]);
+        }
+
+        edge += FLOW_ROWS_PER_FRAME;
+        window.setTimeout(step, FLOW_INTERVAL);
+    };
+
+    step();
+}
+
+function initMatrixGlitch(rowEls, rows) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    // every glitchable [row, col] position, computed once
+    const positions = [];
+    rows.forEach((row, r) => {
+        for (let c = 0; c < row.length; c++) {
+            if (/\S/.test(row[c])) positions.push([r, c]);
+        }
+    });
+
+    if (!positions.length) return;
+
+    const glitch = () => {
+        if (document.hidden) { // tab in background: idle instead of animating
+            window.setTimeout(glitch, 1000);
+            return;
+        }
+
+        const byRow = new Map();
+        for (let n = 0; n < MATRIX_GLITCH_COUNT; n++) {
+            const [r, c] = positions[Math.floor(Math.random() * positions.length)];
+            if (!byRow.has(r)) byRow.set(r, new Set());
+            byRow.get(r).add(c);
+        }
+
+        byRow.forEach((cols, r) => {
+            rowEls[r].innerHTML = [...rows[r]].map((char, c) => {
+                if (!cols.has(c)) return escapeHtml(char);
+
+                const symbol = MATRIX_GLITCH_SYMBOLS[Math.floor(Math.random() * MATRIX_GLITCH_SYMBOLS.length)];
+                return `<span class="matrix-glitch">${escapeHtml(symbol)}</span>`;
+            }).join('');
+        });
 
         window.setTimeout(() => {
-            portrait.textContent = getArt();
+            byRow.forEach((cols, r) => { rowEls[r].textContent = rows[r]; });
             window.setTimeout(glitch, MATRIX_GLITCH_INTERVAL);
         }, MATRIX_GLITCH_LENGTH);
     };
@@ -200,38 +224,26 @@ function initMatrixGlitch(portrait, getArt) {
 
 // ── projects ──────────────────────────────────────────────────────────────────
 
-function buildCard(p, d) {
-    const lang = d?.language || p.language;
-    const dot = lang && LANG_COLORS[lang] ? `<span class="lang-dot" style="background:${LANG_COLORS[lang]}"></span>` : '';
-    const repoUrl = d?.html_url || `https://github.com/${p.repo}`;
-    const repoName = d?.name || p.name || p.repo.split('/').pop();
-    const description = d?.description || p.description;
-    const stars = d?.stargazers_count ?? p.stars;
-    const forks = d?.forks_count ?? p.forks;
-    const allLinks = [...(p.links || []), { label: 'github ↗', url: repoUrl }];
-
-    return `<div class="card">
-    <div class="card-header">
-      ${link('card-title', repoUrl, repoName)}
-      <div class="card-links">${allLinks.map(l => link('card-link', l.url, l.label)).join('')}</div>
+function buildCard(p) {
+    const titleUrl = p.links?.[0]?.url;
+    const langs = (p.languages || []).map(lang => {
+        const dot = LANG_COLORS[lang] ? `<span class="lang-dot" style="background:${LANG_COLORS[lang]}"></span>` : '';
+        return `<span class="meta-item">${dot} ${lang}</span>`;
+    }).join('');
+    return `<article class="card">
+    <div class="card-body">
+      <div class="card-header">
+        ${link('card-title', titleUrl, p.name)}
+        <div class="card-links">${(p.links || []).map(l => link('card-link', l.url, l.label)).join('')}</div>
+      </div>
+      ${p.description ? `<p class="card-desc prose">${p.description}</p>` : ''}
+      ${langs ? `<div class="card-meta">${langs}</div>` : ''}
     </div>
-    ${description ? `<p class="card-desc prose">${description}</p>` : ''}
-    <div class="card-meta">
-      <span class="meta-item">${ICONS.star} ${Number.isFinite(stars) ? fmt(stars) : '—'}</span>
-      <span class="meta-item">${ICONS.fork} ${Number.isFinite(forks) ? fmt(forks) : '—'}</span>
-      ${lang ? `<span class="meta-item">${dot} ${lang}</span>` : ''}
-    </div>
-  </div>`;
+  </article>`;
 }
 
-async function initProjects() {
-    const grid = document.getElementById('project-grid');
-    grid.innerHTML = REPOS.map(() =>
-        `<div class="card"><p class="loading">fetching...</p></div>`
-    ).join('');
-    const repos = await fetchGitHubRepos();
-    const data = REPOS.map(p => repos.find(repo => repo.full_name?.toLowerCase() === p.repo.toLowerCase()) || null);
-    grid.innerHTML = REPOS.map((p, i) => buildCard(p, data[i])).join('');
+function initProjects() {
+    document.getElementById('project-grid').innerHTML = PROJECTS.map(buildCard).join('');
 }
 
 // ── contact form ──────────────────────────────────────────────────────────────
@@ -248,26 +260,75 @@ function initContact() {
     });
 }
 
-// ── theme toggle ──────────────────────────────────────────────────────────────
+// ── boot sequence ─────────────────────────────────────────────────────────────
+// Types the masthead prompt, "presses enter", then reveals the page by
+// dropping html.booting (set inline in <head>; absent for reduced motion).
 
-function initTheme() {
-    const btn = document.getElementById('theme-toggle');
-    const stored = localStorage.getItem('theme');
+function initBootSequence() {
+    const root = document.documentElement;
+    if (!root.classList.contains('booting')) return;
 
-    if (stored === 'light') {
-        document.body.classList.add('light');
+    const reveal = () => {
+        root.classList.remove('booting');
+        decodeText(document.querySelector('h1'));
+        window.dispatchEvent(new Event('bootdone'));
+    };
+    const cursor = document.querySelector('.cursor');
+    const promptText = document.querySelector('.prompt > span')?.firstChild;
+
+    if (!promptText) {
+        reveal();
+        return;
     }
 
-    btn.addEventListener('click', () => {
-        const isLight = document.body.classList.toggle('light');
-        localStorage.setItem('theme', isLight ? 'light' : 'dark');
-        window.dispatchEvent(new Event('themechange'));
-    });
+    const fullText = promptText.textContent;
+    let typed = 0;
+    promptText.textContent = '';
+
+    const type = () => {
+        typed += 1;
+        promptText.textContent = fullText.slice(0, typed);
+
+        if (typed < fullText.length) {
+            window.setTimeout(type, BOOT_TYPE_SPEED);
+        } else {
+            cursor?.classList.add('waiting');            // cursor blinks while idle
+            window.setTimeout(reveal, BOOT_ENTER_DELAY); // enter ↵
+        }
+    };
+
+    window.setTimeout(type, BOOT_START_DELAY);
+}
+
+// resolves an element's text left to right from scrambled glitch characters
+function decodeText(el) {
+    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const finalText = el.textContent;
+    let resolved = 0;
+
+    const step = () => {
+        if (resolved >= finalText.length) {
+            el.textContent = finalText;
+            return;
+        }
+
+        el.textContent = [...finalText].map((char, i) =>
+            i < resolved || !/\S/.test(char)
+                ? char
+                : MATRIX_GLITCH_SYMBOLS[Math.floor(Math.random() * MATRIX_GLITCH_SYMBOLS.length)]
+        ).join('');
+
+        resolved += DECODE_CHARS_PER_FRAME;
+        window.setTimeout(step, DECODE_INTERVAL);
+    };
+
+    step();
 }
 
 // ── init ──────────────────────────────────────────────────────────────────────
 
-initTheme();
+initBootSequence();
 initMatrixPortrait();
 initProjects();
 initContact();
