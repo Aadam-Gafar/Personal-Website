@@ -24,13 +24,13 @@
   --green-glow:  rgba(61,240,143,.45);
   --green-ink:   #02130a;   /* text on green */
 
-  --mono: 'Space Mono', ui-monospace, 'Cascadia Mono', monospace;
+  --mono: 'Cascadia Mono', ui-monospace, monospace;
 
   /* motion: one speed. snap. */
   --snap: 70ms linear;
 }
 
-html { scrollbar-color:#143424 var(--bg) }
+html { scrollbar-color:#143424 var(--bg); scroll-behavior:smooth }
 
 body {
   background:var(--bg);
@@ -360,6 +360,7 @@ html.booting .header-links { visibility:hidden }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation:none !important; transition:none !important }
+  html { scroll-behavior:auto }
 }
 
 /* ── small screens ── */
