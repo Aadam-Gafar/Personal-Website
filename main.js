@@ -35,15 +35,17 @@ const BOOT_START_DELAY = 180;
 const BOOT_TYPE_SPEED = 24;
 const BOOT_ENTER_DELAY = 1000;
 const FLOW_INTERVAL = 24;
-const FLOW_ROWS_PER_FRAME = 2;
-const FLOW_EDGE_ROWS = 3;
+const FLOW_ROWS_PER_FRAME = 4;
+const FLOW_EDGE_ROWS = 6;
 const DECODE_INTERVAL = 16;
 const DECODE_CHARS_PER_FRAME = 2;
+const PORTRAIT_MAX_VW = .92;
+const PORTRAIT_MAX_VH = .7;
 const MATRIX_GLITCH_SYMBOLS = '@#%&$WM8B';
 const MATRIX_GLITCH_COUNT = 10;
 const MATRIX_GLITCH_LENGTH = 500;
 const MATRIX_GLITCH_INTERVAL = 100;
-const MATRIX_ART_FILE = 'face-dark.txt';
+const MATRIX_ART_FILE = 'face.txt';
 const GITHUB_USER = 'Aadam-Gafar';
 const GITHUB_REPO_CACHE_KEY = 'githubRepoMetadata';
 const GITHUB_REPO_CACHE_TTL = 1000 * 60 * 60 * 6;
@@ -136,6 +138,8 @@ async function initMatrixPortrait() {
         const art = await fetchMatrixArt(MATRIX_ART_FILE);
         if (!art) return;
 
+        await initPortraitScale(portrait, art);
+
         const getArt = () => art;
         const start = () => flowInPortrait(portrait, art, () => initMatrixGlitch(portrait, getArt));
 
@@ -147,6 +151,32 @@ async function initMatrixPortrait() {
     } catch {
         portrait.remove();
     }
+}
+
+// measures the art at its fixed cell size, then fits it to the viewport with
+// a uniform scale — aspect ratio stays exact at every screen size
+async function initPortraitScale(portrait, art) {
+    await document.fonts.ready; // fallback-font metrics would skew the measurement
+
+    portrait.style.visibility = 'hidden';
+    portrait.textContent = art;
+    const naturalWidth = portrait.offsetWidth;
+    const naturalHeight = portrait.offsetHeight;
+    portrait.textContent = '';
+    portrait.style.visibility = '';
+
+    if (!naturalWidth || !naturalHeight) return;
+
+    const fit = () => {
+        const scale = Math.min(
+            (window.innerWidth * PORTRAIT_MAX_VW) / naturalWidth,
+            (window.innerHeight * PORTRAIT_MAX_VH) / naturalHeight,
+        );
+        portrait.style.setProperty('--portrait-scale', scale.toFixed(4));
+    };
+
+    fit();
+    window.addEventListener('resize', fit);
 }
 
 // reveals the art top-to-bottom: a scrambled leading edge sweeps down,

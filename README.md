@@ -40,8 +40,7 @@ When available, GitHub supplies the current repo name, description, stars, forks
 |-- index.html
 |-- style.css
 |-- main.js
-|-- face-dark.txt
-|-- face-light.txt
+|-- face.txt
 |-- art/
 |   |-- icon.svg
 |   |-- screenshot.png
