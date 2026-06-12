@@ -11,8 +11,7 @@
     <meta property="og:image" content="https://aadamgafar.com/art/screenshot.png">
     <title>aadam gafar - data scientist</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link
-        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/svg+xml" href="art/icon.svg">
@@ -22,50 +21,60 @@
 
     <pre id="matrix-portrait" aria-hidden="true"></pre>
 
-    <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle theme">
-        <img src="art/toggle.svg" alt="a drop icon">
-    </button>
-
     <div class="wrap">
 
-        <header>
+        <header class="masthead">
             <div class="prompt">
-                <span>> aadam gafar - data scientist</span>
+                <span>&gt; aadam gafar — data scientist<span class="cursor" aria-hidden="true"></span></span>
                 <div class="header-links">
                     <a href="https://github.com/Aadam-Gafar" target="_blank" rel="noopener">github &#x2197;</a>
                     <a href="https://linkedin.com/in/agafar" target="_blank" rel="noopener">linkedin &#x2197;</a>
                 </div>
             </div>
             <h1>Building tools for people who hate wasting time.</h1>
+            <nav class="doc-meta" aria-label="Sections">
+                <a href="#about">about</a>
+                <a href="#projects">projects</a>
+                <a href="#education">education</a>
+                <a href="#experience">experience</a>
+                <a href="#skills">skills</a>
+                <a href="#contact">contact</a>
+            </nav>
         </header>
 
         <section id="about">
-            <h2 class="section-label">about</h2>
+            <div class="section-head">
+                <h2 class="section-label">about</h2>
+            </div>
             <p class="about-text">
                 Software developer transitioning to data science with 3+ years of experience and advanced ML training
                 from Cambridge. Built production-ready forecasting models (Weight Forecasting for Athletes Using
                 Nutrition Data) using SARIMAX/XGBoost, explicit safety constraints, and rigorous statistical validation
                 - achieving 90%+ accuracy.
             </p>
-            <p class="about-text" style="margin-top:1rem">
+            <p class="about-text">
                 Also created the Mono Suite, a collection of distraction-free, local-only tools. This includes Mono for
                 YouTube, a browser extension with 1000+ users, and Mono for Desktop, a privacy-centric desktop
                 application engineered with Rust, Tauri, and a high-performance SQLite backend for large-scale,
                 metadata-driven media management.
             </p>
-            <p class="about-text prose" style="margin-top:1rem">Currently open to data science, data engineering, and ML
+            <p class="about-text">Currently open to data science, data engineering, and ML
                 engineering roles. Get in touch at <a href="mailto:aadamhgafar@gmail.com"
                     class="accent-link">aadamhgafar@gmail.com</a> or via <a href="https://linkedin.com/in/agafar"
                     target="_blank" rel="noopener" class="accent-link">LinkedIn ↗</a>.</p>
         </section>
 
         <section id="projects">
-            <h2 class="section-label">projects</h2>
+            <div class="section-head">
+                <h2 class="section-label">projects</h2>
+            </div>
             <div class="project-grid" id="project-grid"></div>
         </section>
 
         <section id="education">
-            <h2 class="section-label">education</h2>
+            <div class="section-head">
+                <h2 class="section-label">education</h2>
+            </div>
             <div class="timeline-item">
                 <div class="timeline-header">
                     <h3 class="timeline-role">Career Accelerator in Data Science w/ ML & AI</h3>
@@ -93,7 +102,9 @@
         </section>
 
         <section id="experience">
-            <h2 class="section-label">experience</h2>
+            <div class="section-head">
+                <h2 class="section-label">experience</h2>
+            </div>
             <div class="timeline-item">
                 <div class="timeline-header">
                     <h3 class="timeline-role">Software Developer</h3>
@@ -131,7 +142,9 @@
         </section>
 
         <section id="skills">
-            <h2 class="section-label">skills</h2>
+            <div class="section-head">
+                <h2 class="section-label">skills</h2>
+            </div>
             <div class="skills-grid">
                 <div class="panel">
                     <h3 class="skill-label">languages & libraries</h3>
@@ -167,7 +180,9 @@
         </section>
 
         <section id="contact">
-            <h2 class="section-label">contact</h2>
+            <div class="section-head">
+                <h2 class="section-label">contact</h2>
+            </div>
             <form id="contact-form" class="contact-form">
                 <div class="field-row">
                     <div class="field-group">
@@ -184,15 +199,15 @@
                     <textarea id="cf-msg" rows="5" placeholder="what's on your mind?" required></textarea>
                 </div>
                 <div class="form-footer">
-                    <span class="prose">opens your email client - no data sent to any server</span>
-                    <button type="submit">send message ↗</button>
+                    <span class="prose">opens your email client. no data sent to any server.</span>
+                    <button type="submit">send &#x2197;</button>
                 </div>
             </form>
         </section>
 
         <footer>
             <span>aadam gafar</span>
-            <span>html · css · js - nothing else</span>
+            <span>html · css · js — nothing else</span>
         </footer>
 
     </div>

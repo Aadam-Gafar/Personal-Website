@@ -31,19 +31,11 @@ const LANG_COLORS = {
     CSS: '#563d7c', TypeScript: '#2b7489', 'Jupyter Notebook': '#DA5B0B',
 };
 
-const ICONS = {
-    star: `<svg viewBox="0 0 16 16"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25z"/></svg>`,
-    fork: `<svg viewBox="0 0 16 16"><path d="M5 5.372v.878c0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75v-.878a2.25 2.25 0 1 1 1.5 0v.878a2.25 2.25 0 0 1-2.25 2.25h-1.5v2.128a2.251 2.251 0 1 1-1.5 0V8.5h-1.5A2.25 2.25 0 0 1 3.5 6.25v-.878a2.25 2.25 0 1 1 1.5 0zM5 3.25a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0zm6.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5zm-3 8.75a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0z"/></svg>`,
-};
-
 const MATRIX_GLITCH_SYMBOLS = '@#%&$WM8B';
 const MATRIX_GLITCH_COUNT = 10;
 const MATRIX_GLITCH_LENGTH = 500;
 const MATRIX_GLITCH_INTERVAL = 100;
-const MATRIX_ART_FILES = {
-    dark: 'face-dark.txt',
-    light: 'face-light.txt',
-};
+const MATRIX_ART_FILE = 'face-dark.txt';
 const GITHUB_USER = 'Aadam-Gafar';
 const GITHUB_REPO_CACHE_KEY = 'githubRepoMetadata';
 const GITHUB_REPO_CACHE_TTL = 1000 * 60 * 60 * 6;
@@ -51,7 +43,7 @@ let githubReposRequest;
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-const fmt = n => n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
+const fmt = n => n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n).padStart(3, '0');
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({
     '&': '&amp;',
     '<': '&lt;',
@@ -62,10 +54,6 @@ const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({
 const link = (cls, href, text) => href
     ? `<a class="${cls}" href="${href}" target="_blank" rel="noopener">${text}</a>`
     : `<span class="${cls}">${text}</span>`;
-
-function isLightTheme() {
-    return document.body.classList.contains('light');
-}
 
 async function fetchMatrixArt(file) {
     const r = await fetch(file, { cache: 'force-cache' });
@@ -137,21 +125,11 @@ async function initMatrixPortrait() {
     if (!portrait) return;
 
     try {
-        const [darkArt, lightArt] = await Promise.all([
-            fetchMatrixArt(MATRIX_ART_FILES.dark),
-            fetchMatrixArt(MATRIX_ART_FILES.light),
-        ]);
-        if (!darkArt && !lightArt) return;
+        const art = await fetchMatrixArt(MATRIX_ART_FILE);
+        if (!art) return;
 
-        const art = {
-            dark: darkArt || lightArt,
-            light: lightArt || darkArt,
-        };
-        const getArt = () => isLightTheme() ? art.light : art.dark;
-        const render = () => { portrait.textContent = getArt(); };
-
-        render();
-        window.addEventListener('themechange', render);
+        const getArt = () => art;
+        portrait.textContent = art;
         initMatrixGlitch(portrait, getArt);
     } catch {
         portrait.remove();
@@ -210,24 +188,26 @@ function buildCard(p, d) {
     const forks = d?.forks_count ?? p.forks;
     const allLinks = [...(p.links || []), { label: 'github ↗', url: repoUrl }];
 
-    return `<div class="card">
-    <div class="card-header">
-      ${link('card-title', repoUrl, repoName)}
-      <div class="card-links">${allLinks.map(l => link('card-link', l.url, l.label)).join('')}</div>
+    return `<article class="card">
+    <div class="card-body">
+      <div class="card-header">
+        ${link('card-title', repoUrl, repoName)}
+        <div class="card-links">${allLinks.map(l => link('card-link', l.url, l.label)).join('')}</div>
+      </div>
+      ${description ? `<p class="card-desc prose">${description}</p>` : ''}
+      <div class="card-meta">
+        <span class="meta-item">STARS <b>${Number.isFinite(stars) ? fmt(stars) : '—'}</b></span>
+        <span class="meta-item">FORKS <b>${Number.isFinite(forks) ? fmt(forks) : '—'}</b></span>
+        ${lang ? `<span class="meta-item">${dot} ${lang}</span>` : ''}
+      </div>
     </div>
-    ${description ? `<p class="card-desc prose">${description}</p>` : ''}
-    <div class="card-meta">
-      <span class="meta-item">${ICONS.star} ${Number.isFinite(stars) ? fmt(stars) : '—'}</span>
-      <span class="meta-item">${ICONS.fork} ${Number.isFinite(forks) ? fmt(forks) : '—'}</span>
-      ${lang ? `<span class="meta-item">${dot} ${lang}</span>` : ''}
-    </div>
-  </div>`;
+  </article>`;
 }
 
 async function initProjects() {
     const grid = document.getElementById('project-grid');
     grid.innerHTML = REPOS.map(() =>
-        `<div class="card"><p class="loading">fetching...</p></div>`
+        `<div class="card"><p class="loading">retrieving records ...</p></div>`
     ).join('');
     const repos = await fetchGitHubRepos();
     const data = REPOS.map(p => repos.find(repo => repo.full_name?.toLowerCase() === p.repo.toLowerCase()) || null);
@@ -248,26 +228,8 @@ function initContact() {
     });
 }
 
-// ── theme toggle ──────────────────────────────────────────────────────────────
-
-function initTheme() {
-    const btn = document.getElementById('theme-toggle');
-    const stored = localStorage.getItem('theme');
-
-    if (stored === 'light') {
-        document.body.classList.add('light');
-    }
-
-    btn.addEventListener('click', () => {
-        const isLight = document.body.classList.toggle('light');
-        localStorage.setItem('theme', isLight ? 'light' : 'dark');
-        window.dispatchEvent(new Event('themechange'));
-    });
-}
-
 // ── init ──────────────────────────────────────────────────────────────────────
 
-initTheme();
 initMatrixPortrait();
 initProjects();
 initContact();
