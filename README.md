@@ -2,64 +2,27 @@
 
 ![Website screenshot](art/screenshot.png)
 
-A personal portfolio and CV built with plain HTML, CSS, and JavaScript.
+My personal website and online CV to introduce who I am, the work I've done, and how to get in touch. Live at [aadamgafar.com](https://aadamgafar.com).
 
-## What It Includes
+## What's On It
 
-- Responsive portfolio/CV sections for about, projects, education, experience, skills, and contact
-- Project cards generated from `main.js` with GitHub metadata fetched from the GitHub API
-- Local storage caching for GitHub repo metadata to reduce repeated API calls
-- Dark/light theme toggle with saved preference
-- ASCII portrait background that swaps artwork between dark and light mode
-- Small glitch animation that respects `prefers-reduced-motion`
-- Mailto contact form, with no server-side processing or third-party form service
-- Open Graph metadata, favicon, and JSON-LD `Person` schema
+- **About** - a short intro to who I am and what I do
+- **Projects** - featured things I've built, each with a link to find out more
+- **Education** - my degrees and courses
+- **Experience** - where I've worked and what I did there
+- **Skills** - the tools and topics I work with
+- **Contact** - a form that opens your email app with a message ready to send
 
-## Project Data
+## Look And Feel
 
-Featured projects are configured in `main.js` through the `PROJECTS` array. Each entry can provide fallback metadata and the card's links (GitHub repo, store URLs, live demos, etc.):
+The site has a retro, terminal-style look.
 
-```js
-{
-  repo: 'Aadam-Gafar/Mono-YouTube-Extension',
-  name: 'Mono YouTube Extension',
-  description: '...',
-  language: 'CSS',
-  links: [
-    { label: 'chrome store', url: '...' },
-    { label: 'github ↗', url: 'https://github.com/Aadam-Gafar/Mono-YouTube-Extension' },
-  ],
-}
-```
+- When the page loads, the heading types itself out as if someone were tapping it in, then the rest of the page appears.
+- In the background there's a portrait of me drawn out of text characters. It fades in from the top and quietly flickers as you browse.
+- The headline scrambles and then "decodes" into place.
 
-When available, GitHub supplies the current repo name, description, stars, forks, language, and GitHub URL.
+If you prefer less movement, the site respects your device's "reduce motion" setting and skips the animations.
 
-## Structure
+## Featured Projects
 
-```text
-.
-|-- index.html
-|-- style.css
-|-- main.js
-|-- face.txt
-|-- art/
-|   |-- icon.svg
-|   |-- screenshot.png
-|   `-- toggle.svg
-|-- CNAME
-`-- README.md
-```
-
-## Running Locally
-
-Open `index.html` directly in a browser for the static page. For the ASCII portrait fetches to work consistently across browsers, serve the folder locally instead:
-
-```powershell
-python -m http.server 8000
-```
-
-Then visit `http://localhost:8000`.
-
-## Deployment
-
-The site is intended for GitHub Pages with the custom domain configured in `CNAME`.
+The projects shown on the page are listed in one place in the code, so they're easy to add to or update. Each one has a name, a short description, the tools it was built with, and a link or two.
