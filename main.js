@@ -246,20 +246,6 @@ function initProjects() {
     document.getElementById('project-grid').innerHTML = PROJECTS.map(buildCard).join('');
 }
 
-// ── contact form ──────────────────────────────────────────────────────────────
-
-function initContact() {
-    document.getElementById('contact-form').addEventListener('submit', e => {
-        e.preventDefault();
-        const name = document.getElementById('cf-name').value.trim();
-        const email = document.getElementById('cf-email').value.trim();
-        const msg = document.getElementById('cf-msg').value.trim();
-        const subject = encodeURIComponent(`Portfolio contact from ${name}`);
-        const body = encodeURIComponent(`From: ${name} <${email}>\n\n${msg}`);
-        window.location.href = `mailto:aadamhgafar@gmail.com?subject=${subject}&body=${body}`;
-    });
-}
-
 // ── boot sequence ─────────────────────────────────────────────────────────────
 // Types the masthead prompt, "presses enter", then reveals the page by
 // dropping html.booting (set inline in <head>; absent for reduced motion).
@@ -331,4 +317,3 @@ function decodeText(el) {
 initBootSequence();
 initMatrixPortrait();
 initProjects();
-initContact();
