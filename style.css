@@ -139,7 +139,7 @@ h1 {
 
 /* section nav — bureaucratic index row */
 .doc-meta {
-  display:grid; grid-template-columns:repeat(6,1fr);
+  display:grid; grid-template-columns:repeat(5,1fr);
   border:1px solid var(--line);
   margin-top:2rem;
   font-size:10px; letter-spacing:.14em; text-transform:uppercase;
@@ -274,23 +274,6 @@ section::after  { right:0; transform:translate(50%,0) }
 .timeline-list   { list-style:none; display:flex; flex-direction:column; gap:.45rem }
 .timeline-list li { padding-left:1.2rem; position:relative }
 .timeline-list li::before { content:'—'; position:absolute; left:0; color:var(--line-strong) }
-
-/* ── skills ── */
-.skills-grid {
-  display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(min(340px,100%),1fr));
-  gap:1.5rem;
-  counter-reset:mod;
-}
-.skills-grid .panel { counter-increment:mod }
-.skill-label {
-  font-size:10px; letter-spacing:.18em; color:var(--green);
-  text-transform:uppercase; margin-bottom:.8rem;
-}
-.skill-label::before {
-  content:'MOD.' counter(mod, decimal-leading-zero) ' — ';
-  color:var(--text-bright);
-}
 
 /* ── contact ── */
 .contact-form { display:flex; flex-direction:column; gap:1.25rem }

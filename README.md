@@ -10,7 +10,6 @@ My personal website and online CV to introduce who I am, the work I've done, and
 - **Projects** - featured things I've built, each with a link to find out more
 - **Education** - my degrees and courses
 - **Experience** - where I've worked and what I did there
-- **Skills** - the tools and topics I work with
 - **Contact** - a form that opens your email app with a message ready to send
 
 ## Look And Feel
